@@ -1,6 +1,7 @@
 #!/bin/bash
 ################################################################
 # Matthias Grobe                                               #
+# https://github.com/kyle-mge/FSopenAPI                        #
 # April 2024, version 1.0                                      #
 # changelog                                                    #
 #                                                              #
@@ -48,7 +49,9 @@ if jq -e . >/dev/null 2>&1 <<<"${returnjson}"; then
     echo ""
     echo "If the Result is other than true and/ or XSRF-Token is empty or Null, check Credentials in FSopenAPI.conf and/or Message from json-raw!"
     echo "paste XSRF-Token in FSopenAPI.conf to gather the desired data."
+    echo "without the correct XSRF-Token in FSopenAPI.conf, you won't be able to gather Data from your Plant."
     echo ""
+
 
 else
     echo "Failed to parse JSON, or got false/null"
