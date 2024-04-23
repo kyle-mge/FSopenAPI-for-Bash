@@ -46,6 +46,7 @@ Run the Script ```"./FSopenAPI_RealtimeKPI.sh"``` to get realtime Data from your
 
 The Script ```"./FSopenAPI_deviceRealKPI.sh"``` needs to get started with the flag ```-d``` and one or several Integer-Values. Multiple values need to be seperated by comma (,). According to the Huawei Documentation of the interface, the following values are possible (only if installed!):
 
+```
 1: string inverter
 2: SmartLogger
 8: STS
@@ -65,8 +66,9 @@ The Script ```"./FSopenAPI_deviceRealKPI.sh"``` needs to get started with the fl
 62: Dongle
 63: distributed SmartLogger
 70: safety box
+```
 
-Further information to be found at https://support.huawei.com/enterprise/en/doc/EDOC1100261860/c2b572a8/device-list-interface
+Further information to be found in the Huawei Documentation at https://support.huawei.com/enterprise/en/doc/EDOC1100261860/c2b572a8/device-list-interface
 
 ## Historical Data
 ### Historical Station Data - Hourly
