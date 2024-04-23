@@ -7,6 +7,7 @@ This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
 # Configuration
 ## Install Prerequisites
 The Scriptset needs cURL, jq and mysql. To install simply run
+
 ```sudo apt install curl, jq, mysql-client```
 
 ## Edit the FSopenAPI.conf with your specific Data
