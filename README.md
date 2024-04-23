@@ -70,11 +70,11 @@ Further information to be found at https://support.huawei.com/enterprise/en/doc/
 
 ## Historical Data
 ### Historical Station Data - Hourly
-Run the Script ```"./FSopenAPI_stationHourly.sh"``` with the flag  ```-s``` to inject your data into MySQL-Database (read "Configuration" first!). As the API is providing the data from the whole day, it is possible to run the script just once at the end of the day. Be aware of running the script in maximum every hour as you might block your Account!
+Run the Script ```"./FSopenAPI_stationHourly.sh"``` to gather hourly data from your plant. Data will be at least OnGrid-Power and Inverter-Power summarized per hour. Use the optional flag  ```-s``` to inject your data directly into MySQL-Database (read "Configuration" first!). As the API is providing the data from the whole day, it is possible to run the script just once at the end of the day. Be aware of running the script in maximum every hour as you might block your Account!
 
 ## Output
 All Scripts output the results as delivered by openAPI in json-Format for further usage like storing in a Database, handing over to Smart-Home-Systems etc.
 
 
 ## Work in progress
-Use the Scripts ```"./FSopenAPI_histHourly.sh"```, ```"./FSopenAPI_histDaily.sh"```, ```"./FSopenAPI_histMonthly.sh"``` or ```"./FSopenAPI_histYearly.sh"``` to retrieve historical Data on hourly/ daily/ monthly/ yearly basis.
+Use the Scripts ```"./FSopenAPI_histDaily.sh"```, ```"./FSopenAPI_histMonthly.sh"``` or ```"./FSopenAPI_histYearly.sh"``` to retrieve historical Data on hourly/ daily/ monthly/ yearly basis.
