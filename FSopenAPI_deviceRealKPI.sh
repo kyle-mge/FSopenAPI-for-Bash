@@ -27,23 +27,66 @@ devlistURL="${URL}${URLdevlist}"
 devrealkpiURL="${URL}${URLdevrealkpi}"
 realtimeURL="${URL}${URLrealtime}"
 
+# Function to display help message
+display_help() {
+    echo ""
+    echo "Usage: $(basename "$0") [options]"
+    echo "Options:"
+    echo "  -d <int>  DeviceID as Integer value. (mandatory)"
+    echo "             1 = string inverter"
+    echo "             2 = smart logger"
+    echo "            39 = battery"
+    echo "            40 = backup box"
+    echo "            47 = power sensor"
+    echo "            62 = Dongle"
+    echo ""
+    echo "            provide multiple values comma-separated (,)"
+    echo "            for further DeviceIDs refer to Huawei Documentation"
+    echo ""
+    echo "  -v        verbose output (optional)"
+    echo "  -h        this help page"
+    exit 0
+}
+
+
 # Initialize verbose flag
 verbose=false
+device=1
 
-# Check if the '-v' flag is provided
-while getopts ":v" opt; do
+# Check if the script is started with the -h flag
+if [[ "$1" == "-h" ]]; then
+    display_help
+fi
+
+# Command-Line Options
+while getopts ":d:vh" opt; do
   case $opt in
+    h)
+      display_help
+      ;;
+    d)
+      deviceid=$OPTARG
+      ;;
     v)
       verbose=true
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
+      display_help
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      display_help
       ;;
   esac
 done
-
-# Shift command line arguments to process non-option arguments
 shift $((OPTIND -1))
+
+# Check if -d flag is provided and integer value is present
+if [ -z "${deviceid}" ]; then
+    echo "Error: Missing integer value(s) for -d flag." >&2
+    display_help
+fi
 
 # Function to echo only if verbose mode is enabled
 log_verbose() {
@@ -57,8 +100,6 @@ log_always() {
     timestamp=$(date +"%Y-%m-%d %H:%M:%S")
     echo "[$timestamp] $1"
 }
-
-
 
 
 log_verbose ""
@@ -108,51 +149,39 @@ plant_code=$(echo "${returnplant}" | jq -r '.data.list[0].plantCode')
 log_verbose "plantCode: ${plant_code}"
 log_verbose ""
 
-# get Device List, assuming only one Plant and get devDN from SmartMeter/ power sensor
+# get Device List, assuming only one Plant
 returndevlist=$(curl -s -X POST  "${devlistURL}" \
      -H "Content-Type: application/json" \
      -H "XSRF-Token: ${token}" \
      -d "{\"stationCodes\": \"${plant_code}\"}")
 
-deviceDN=$(echo "${returndevlist}" | jq -r '.data[] | select(.devTypeId == 47) | .devDn')
 log_verbose "GetDeviceList output:"
 log_verbose "${returndevlist}"
-log_verbose "DeviceDN of Device: ${deviceDN} (power sensor)"
-log_verbose ""
 
-# retrieve Device RealtimeKPI, assuming only one Plant
-returndevrealtime=$(curl -s -X POST  "${devrealkpiURL}" \
-     -H "Content-Type: application/json" \
-     -H "XSRF-Token: ${token}" \
-     -d "{\"sns\":\"${deviceDN}\",\"devTypeID\":\"47\"}")
+# Split the comma-separated list of integers
+IFS=',' read -ra values_array <<< "$deviceid"
 
-log_verbose "Realtime Device output (power sensor):"
-echo "${returndevrealtime}"
-echo ""
+# loop through deviceTypeID's and get RealtimeKPI per Device
+for value in "${values_array[@]}"; do
+	deviceDN=""
+	deviceName=""
+	log_verbose "DeviceID to be processed: ${value}"
+	deviceDN=$(echo "${returndevlist}" | jq -r --arg devid "$value" '.data[] | select(.devTypeId == ($devid | tonumber)) | .devDn')
+	deviceName=$(echo "${returndevlist}" | jq -r --arg devid "$value" '.data[] | select(.devTypeId == ($devid | tonumber)) | .devName')
+	log_verbose "DeviceName of Device: ${deviceName}"
+	log_verbose "DeviceDN of Device: ${deviceDN}"
+	log_verbose ""
 
+	# retrieve Device RealtimeKPI, assuming only one Plant
+	returndevrealtime=$(curl -s -X POST  "${devrealkpiURL}" \
+	     -H "Content-Type: application/json" \
+	     -H "XSRF-Token: ${token}" \
+	     -d "{\"devIds\":\"${deviceDN}\",\"devTypeId\":\"${value}\"}")
 
-# get Device List, assuming only one Plant and get devDN from StringInverter
-returndevlist=$(curl -s -X POST  "${devlistURL}" \
-     -H "Content-Type: application/json" \
-     -H "XSRF-Token: ${token}" \
-     -d "{\"stationCodes\": \"${plant_code}\"}")
-
-deviceDN=$(echo "${returndevlist}" | jq -r '.data[] | select(.devTypeId == 1) | .devDn')
-log_verbose "GetDeviceList output:"
-log_verbose "${returndevlist}"
-log_verbose "DeviceDN of Device: ${deviceDN} (string inverter)"
-log_verbose ""
-
-
-# retrieve Device RealtimeKPI, assuming only one Plant
-returndevrealtime=$(curl -s -X POST  "${devrealkpiURL}" \
-     -H "Content-Type: application/json" \
-     -H "XSRF-Token: ${token}" \
-     -d "{\"sns\":\"${deviceDN}\",\"devTypeID\":\"1\"}")
-
-log_verbose "Realtime Device output (StringInverter):"
-echo "${returndevrealtime}"
-echo ""
+	log_verbose "Realtime Device output:"
+	echo "${returndevrealtime}"
+	echo ""
+done
 
 # close session
 closesession=$(curl -s -X POST  "${logoutURL}" \
