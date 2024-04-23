@@ -1,5 +1,5 @@
 # FSopenAPI
-Read Data through Huawei FusionSolar openAPI
+Read Data through Huawei FusionSolar openAPI/ Northbound API.
 
 # Prologue
 This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
