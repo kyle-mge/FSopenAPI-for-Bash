@@ -4,9 +4,9 @@ This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
 
 # Configuration
 ## Install Prerequisites
-The Scriptset needs cURL, jq and mysql. To install simply run
+The Scriptset needs cURL, jq and mysql (mysql is only needed if you want to directly store the data in a MySQL-Database). To install simply run
 
-```sudo apt install curl jq mysql-client```
+```sudo apt install curl jq mysql-client```.
 
 ## Edit the FSopenAPI.conf with your specific Data
 Update the Login-credentials and enter your Username and Systemcode (aka Password). You need to create a Northbound API-Account first through Fusionsolar. Ask your Installer, if you do not have Administrator-Rights for your plant.
@@ -36,10 +36,10 @@ If you plan to store your Data in a MySQL-Database, run the Script ```"./FSopenA
 
 
 # Usage
-For testing purposes, run the Scripts with the flag ```"./FSopenAPI_<Script>.sh -v"``` to get verbose output.
-
 ## In General
-Run the scripts on a linux-system (tested with Ubuntu) automated with crontab or through a Home-Automation-System like openhab. The output is a/ multiple JSON-String(s) for further storing and/ or visualising data.
+For testing purposes, run the Scripts with the flag ```-v``` to get verbose output.
+
+Run the scripts on a linux-system (tested with Ubuntu) automated with crontab or through a Smart-Home-System like OpenHAB. The output is a/ multiple JSON-String(s) for further storing and/ or visualising data.
 
 ## Realtime Data
 Run the Script ```"./FSopenAPI_RealtimeKPI.sh"``` to get realtime Data from your Plant. The data usually is updated every 5 minutes. According to the openAPI-Documentation, request-freqency should not exceed one minute. You might block your openAPI-Account!
