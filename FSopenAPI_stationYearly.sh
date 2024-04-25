@@ -10,9 +10,8 @@
 #                                                              #
 #                                                              #
 ################################################################
-# FSopenAPI_stationRealKPI.sh                                  #
 #                                                              #
-# run this script to retrieve Realtime KPI from your plant.    #
+# run this script to retrieve historical KPI from your plant.  #
 # Include API-Username and Password a.k.a systemCode           #
 # in FSopenAPI.conf                                            #
 ################################################################
@@ -20,7 +19,8 @@
 # read config
 . ./FSopenAPI.conf
 
-# Initialize verbose flag
+# Initialize flags
+writetodatabase=false
 verbose=false
 
 # Function to display help message
@@ -28,6 +28,8 @@ display_help() {
     echo ""
     echo "Usage: $(basename "$0") [options]"
     echo "Options:"
+    echo "  -s     Inject into MySQL (optional)"
+    echo "         Add Login Credentials in conf"
     echo "  -v     verbose output (optional)"
     echo "  -h     display this help page"
     exit 0
@@ -37,12 +39,14 @@ if [[ "$1" == "-h" ]]; then
     display_help
 fi
 
-
 # Check parameters
-while getopts ":vh" opt; do
+while getopts ":svh" opt; do
   case $opt in
     h)
       display_help
+      ;;
+    s)
+      writetodatabase=true
       ;;
     v)
       verbose=true
@@ -69,8 +73,12 @@ log_always() {
     echo "[$timestamp] $1"
 }
 
-
-
+# Function to convert timestamp to human-readable time
+timestamp_to_readable() {
+    local timestamp_ms="$1"
+    local timestamp_sec=$((timestamp_ms / 1000))
+    date -d "@$timestamp_sec" "+%Y-%m-%d %H:%M:%S"
+}
 
 log_verbose ""
 log_verbose "Fusionsolar openAPI-Tool"
@@ -119,15 +127,56 @@ plant_code=$(echo "${returnplant}" | jq -r '.data.list[0].plantCode')
 log_verbose "plantCode: ${plant_code}"
 log_verbose ""
 
-# retrieve RealtimeKPI, assuming only one Plant
-returnrealtime=$(curl -s -X POST  "${realtimeURL}" \
+# retrieve yearlyKPI, assuming only one Plant
+# Get the current hour timestamp, reset minutes and seconds to zero and calculate in milliseconds
+current_hour_timestamp=$(date -d "now" +%s)
+current_hour_timestamp=$(date -d @$current_hour_timestamp +"%Y-%m-%d %H:00:00")
+current_hour_timestamp_ms=$(date -d "$current_hour_timestamp" +%s%3N)
+
+returnhist=$(curl -s -X POST  "${yearlyURL}" \
      -H "Content-Type: application/json" \
      -H "XSRF-Token: ${token}" \
-     -d "{\"stationCodes\": \"${plant_code}\"}")
+     -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${current_hour_timestamp_ms}\"}")
 
-log_verbose "Realtime Station output:"
-echo "${returnrealtime}"
+log_verbose "yearly KPI Station output:"
+echo "${returnhist}"
 echo ""
+
+#write to Database if flag is set
+log_verbose "WriteToDatabase Flag is set to: ${writetodatabase}"
+if [[ "$writetodatabase" == "true" ]]; then
+	# Parse JSON data and construct MySQL query
+	log_verbose "Parse JSON data and construct MySQL query"
+
+	query="INSERT INTO ${mysql_table_prefix}kpimonthly (collectTime, stationCode, radiation_intensity, power_profit, theory_power, ongrid_power, inverter_power) VALUES "
+	while IFS= read -r line; do
+	    collectTime=$(echo "$line" | jq -r '.collectTime')
+            collectTimeReadable=$(timestamp_to_readable "$collectTime")
+	    stationCode=$(echo "$line" | jq -r '.stationCode')
+	    radiation_intensity=$(echo "$line" | jq -r '.dataItemMap.radiation_intensity')
+	    power_profit=$(echo "$line" | jq -r '.dataItemMap.power_profit')
+	    theory_power=$(echo "$line" | jq -r '.dataItemMap.theory_power')
+	    ongrid_power=$(echo "$line" | jq -r '.dataItemMap.ongrid_power')
+	    inverter_power=$(echo "$line" | jq -r '.dataItemMap.inverter_power')
+	    query+="('$collectTimeReadable', '$stationCode', $radiation_intensity, $power_profit, $theory_power, $ongrid_power, $inverter_power),"
+	done < <(echo "$returnhist" | jq -c '.data[]')
+
+	# Remove the trailing comma and space
+	query="${query%,}"
+
+	# Use "ON DUPLICATE KEY UPDATE" to update existing entries
+	query+=" ON DUPLICATE KEY UPDATE 
+        	    radiation_intensity = VALUES(radiation_intensity),
+	            power_profit = VALUES(power_profit),
+        	    theory_power = VALUES(theory_power),
+	            ongrid_power = VALUES(ongrid_power),
+        	    inverter_power = VALUES(inverter_power);"
+
+	# Execute MySQL query
+	log_verbose "run MySQL-Client and execute INSERT-query"
+	mysql --silent -h "$mysql_host" -u "$mysql_user" -p"$mysql_password" "$mysql_database" -e "$query"
+fi
+
 
 # close session
 closesession=$(curl -s -X POST  "${logoutURL}" \

@@ -20,12 +20,6 @@
 
 # read config
 . ./FSopenAPI.conf
-loginURL="${URL}${URLlogin}"
-logoutURL="${URL}${URLlogout}"
-stationURL="${URL}${URLStation}"
-devlistURL="${URL}${URLdevlist}"
-devrealkpiURL="${URL}${URLdevrealkpi}"
-realtimeURL="${URL}${URLrealtime}"
 
 # Function to display help message
 display_help() {

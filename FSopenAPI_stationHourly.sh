@@ -10,19 +10,14 @@
 #                                                              #
 #                                                              #
 ################################################################
-# FSopenAPI_stationRealKPI.sh                                  #
 #                                                              #
-# run this script to retrieve Realtime KPI from your plant.    #
+# run this script to retrieve historical KPI from your plant.  #
 # Include API-Username and Password a.k.a systemCode           #
 # in FSopenAPI.conf                                            #
 ################################################################
 
 # read config
 . ./FSopenAPI.conf
-loginURL="${URL}${URLlogin}"
-logoutURL="${URL}${URLlogout}"
-stationURL="${URL}${URLStation}"
-hourlyURL="${URL}${URLhourly}"
 
 # Initialize flags
 writetodatabase=false
@@ -138,13 +133,13 @@ current_hour_timestamp=$(date -d "now" +%s)
 current_hour_timestamp=$(date -d @$current_hour_timestamp +"%Y-%m-%d %H:00:00")
 current_hour_timestamp_ms=$(date -d "$current_hour_timestamp" +%s%3N)
 
-returnhour=$(curl -s -X POST  "${hourlyURL}" \
+returnhist=$(curl -s -X POST  "${hourlyURL}" \
      -H "Content-Type: application/json" \
      -H "XSRF-Token: ${token}" \
      -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${current_hour_timestamp_ms}\"}")
 
 log_verbose "hourly KPI Station output:"
-echo "${returnhour}"
+echo "${returnhist}"
 echo ""
 
 #write to Database if flag is set
@@ -164,7 +159,7 @@ if [[ "$writetodatabase" == "true" ]]; then
 	    ongrid_power=$(echo "$line" | jq -r '.dataItemMap.ongrid_power')
 	    inverter_power=$(echo "$line" | jq -r '.dataItemMap.inverter_power')
 	    query+="('$collectTimeReadable', '$stationCode', $radiation_intensity, $power_profit, $theory_power, $ongrid_power, $inverter_power),"
-	done < <(echo "$returnhour" | jq -c '.data[]')
+	done < <(echo "$returnhist" | jq -c '.data[]')
 
 	# Remove the trailing comma and space
 	query="${query%,}"
