@@ -73,10 +73,17 @@ Further information to be found in the Huawei Documentation at https://support.h
 ## Historical Data
 ### Historical Station Data - Hourly
 Run the Script ```"./FSopenAPI_stationHourly.sh"``` to gather hourly data from your plant. Data will be at least OnGrid-Power and Inverter-Power summarized per hour. Use the optional flag  ```-s``` to inject your data directly into MySQL-Database (read "Configuration" first!). As the API is providing the data from the whole day, it is possible to run the script just once at the end of the day. Be aware of running the script in maximum every hour as you might block your Account!
+### Historical Station Data - Daily, Monthly, Yearly
+Same as above, run ```"./FSopenAPI_stationDaily.sh"``` to get daily historical data from your plant, the flag ```-s``` is valid to use as well with this script.
+Data-Fields from the Daily-Script are Inverter-Power, SelfUsePower, dischargeCapacity, usePower (including Power from Grid), onGrid Power, buyPower.
+
+Be aware: If Data is already available in the database, the existing entry will be updated!
 
 ## Output
 All Scripts output the results as delivered by openAPI in json-Format for further usage like storing in a Database, handing over to Smart-Home-Systems etc.
 
 
 ## Work in progress
-Use the Scripts ```"./FSopenAPI_histDaily.sh"```, ```"./FSopenAPI_histMonthly.sh"``` or ```"./FSopenAPI_histYearly.sh"``` to retrieve historical Data on hourly/ daily/ monthly/ yearly basis.
+a) Update the DB-Tables-Creation-Script to meet the needs for Daily/ Monthly/ Yearly
+b) combine whole historical Data in one Script
+c) optional flag for historical data include "day of collecting data" to select data from past days/ months/ years
