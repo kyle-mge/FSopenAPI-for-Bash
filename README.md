@@ -1,6 +1,12 @@
 # Prologue
 This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
 
+# Disclaimer
+- I did not nor do I plan to implement any functions to catch errors while requesting the data. If the API is not responding, credentials aren't working/ are blocked etc., the scripts will not catch any data or might crash.
+- If Huawei decides to change structures or add/ remove datafields, the queries will might crash. SQL-Queries are more or less hardcoded based on the data provided by the API and my plant (SUN2000 8KTL-M1).
+- I do not garantuee any functionality, safety or security (Passwords might be easily gathered, so be wise in using accounts with least amount of access rights, secure the .conf-File against 
+unauthorized access, etc.). Primarily I created these scripts for my needs.
+- Last but not least: if you keen on contributing in the development, feel free to contact me.
 
 # Configuration
 ## Install Prerequisites
@@ -32,7 +38,7 @@ mysql_table_prefix="FSopenAPI_"
 ```
 
 ## Create Database Tables (optional)
-If you plan to store your Data in a MySQL-Database, run the Script ```"./FSopenAPI_createDBtables.sh"``` once to create the necessary tables.
+If you plan to store your Data in a MySQL-Database, run the Script ```"./FSopenAPI_createDBtables.sh"``` once to create the necessary tables. It will create tables for storing the historical station/ plant Data for hourly, daily, monthly and yearly Data.
 
 
 # Usage
@@ -71,11 +77,21 @@ The Script ```"./FSopenAPI_deviceRealKPI.sh"``` needs to get started with the fl
 Further information to be found in the Huawei Documentation at https://support.huawei.com/enterprise/en/doc/EDOC1100261860/c2b572a8/device-list-interface
 
 ## Historical Data
-### Historical Station Data - Hourly
-Run the Script ```"./FSopenAPI_stationHourly.sh"``` to gather hourly data from your plant. Data will be at least OnGrid-Power and Inverter-Power summarized per hour. Use the optional flag  ```-s``` to inject your data directly into MySQL-Database (read "Configuration" first!). As the API is providing the data from the whole day, it is possible to run the script just once at the end of the day. Be aware of running the script in maximum every hour as you might block your Account!
-### Historical Station Data - Daily, Monthly, Yearly
-Same as above, run ```"./FSopenAPI_stationDaily.sh"``` to get daily historical data from your plant, the flag ```-s``` is valid to use as well with this script.
-Data-Fields from the Daily-Script are Inverter-Power, SelfUsePower, dischargeCapacity, usePower (including Power from Grid), onGrid Power, buyPower.
+### Historical Station Data
+Run the Script ```"./FSopenAPI_stationhistorical.sh"``` to gather hourly, daily, monthly and/ or yearly data from your plant. Data will be at least OnGrid-Power and Inverter-Power summarized per hour and way more information for the daily/ monthly/ yearly requests. Use the optional flag  ```-s``` to inject your data directly into MySQL-Database (read "Configuration" first!). As the API is providing the data from the whole day, it is possible to run the script just once at the end of the day. Be aware of running the script in maximum every hour as you might block your Account!
+
+Use the flag ```-i``` and add one ore multiple Integer values as follows. Multiple values need to be seperated by comma (,).
+```
+1: request hourly historical Data
+2: request daily historical Data
+3: request monthly historical Data
+4: request yearly historical Data
+```
+
+#### Example:
+```./FSopenAPI_stationhistorical.sh -s -i 2``` to gather the daily historical data and store in Database
+
+```./FSopenAPI_stationhistorical.sh -i 2,3``` to gather the daily and monthly historical data but do not store in Database and only output the data as json-Strings.
 
 Be aware: If Data is already available in the database, the existing entry will be updated!
 
@@ -83,7 +99,6 @@ Be aware: If Data is already available in the database, the existing entry will 
 All Scripts output the results as delivered by openAPI in json-Format for further usage like storing in a Database, handing over to Smart-Home-Systems etc.
 
 
-## Work in progress
-a) Update the DB-Tables-Creation-Script to meet the needs for Daily/ Monthly/ Yearly
-b) combine whole historical Data in one Script
-c) optional flag for historical data include "day of collecting data" to select data from past days/ months/ years
+# Work in progress
+- optional flag for historical data to include "day of collecting data" to select data from past days/ months/ years
+- long term: historical data from Devices + store in Database
