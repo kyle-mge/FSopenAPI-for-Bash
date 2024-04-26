@@ -1,5 +1,5 @@
 # Prologue
-This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
+This Scriptset reads Data via the openAPI/ Northbound-Interface from Huawei FusionSolar. It only needs a linux bash, cURL and jq. No need to install Python or other languages.
 
 # Disclaimer
 - I did not nor do I plan to implement any functions to catch errors while requesting the data. If the API is not responding, credentials aren't working/ are blocked etc., the scripts will not catch any data or might crash.
