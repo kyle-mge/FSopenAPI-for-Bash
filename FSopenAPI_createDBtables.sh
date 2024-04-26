@@ -35,8 +35,35 @@ for value in "${values_array[@]}"; do
 	echo "Create ${value}..."
 	echo ""
 	# Table creation query
-	create_table_query="CREATE TABLE IF NOT EXISTS ${value} (collectTime DATETIME NOT NULL,stationCode VARCHAR(255) NOT NULL,radiation_intensity FLOAT,power_profit FLOAT,theory_power FLOAT,ongrid_power FLOAT,inverter_power FLOAT,PRIMARY KEY (collectTime, stationCode));"
-
+	if [[ "$value" == "$tablehourly" ]]; then
+		create_table_query="CREATE TABLE IF NOT EXISTS ${value} (collectTime DATETIME NOT NULL,
+				stationCode VARCHAR(255) NOT NULL,
+				radiation_intensity FLOAT,
+				power_profit FLOAT,
+				theory_power FLOAT,
+				ongrid_power FLOAT,
+				inverter_power FLOAT,
+				PRIMARY KEY (collectTime)
+				);"
+	else
+		create_table_query="CREATE TABLE IF NOT EXISTS ${value} (collectTime DATETIME NOT NULL,
+				stationCode VARCHAR(255) NOT NULL,
+				inverter_power FLOAT,
+				selfUsePower FLOAT,
+				power_profit FLOAT,
+				perpower_ratio FLOAT,
+				reduction_total_co2 FLOAT,
+				chargeCap FLOAT,
+				selfProvide FLOAT,
+				dischargeCap FLOAT,
+				installed_capacity FLOAT,
+				use_power FLOAT,
+				reduction_total_coal FLOAT,
+				ongrid_power FLOAT,
+				buyPower FLOAT,
+				PRIMARY KEY (collectTime)
+				);"
+	fi
 	# Execute MySQL query to create table
 	create=$(mysql -h "$mysql_host" -u "$mysql_user" -p"$mysql_password" "$mysql_database" -e "$create_table_query")
 
