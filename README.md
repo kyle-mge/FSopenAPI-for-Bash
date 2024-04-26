@@ -14,6 +14,8 @@ The Scriptset needs cURL, jq and mysql (mysql is only needed if you want to dire
 
 ```sudo apt install curl jq mysql-client```.
 
+Please be aware that I won't explain how to set up the MySQL-Database-Server. There's plenty of instructions and how-to's in the internet. I assume that- if you want to store your data in MySQL, that you have a MySQL-Server already up and running.
+
 ## Edit the FSopenAPI.conf with your specific Data
 Update the Login-credentials and enter your Username and Systemcode (aka Password). You need to create a Northbound API-Account first through Fusionsolar. Ask your Installer, if you do not have Administrator-Rights for your plant.
 
