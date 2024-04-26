@@ -6,7 +6,7 @@ This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
 - If Huawei decides to change structures or add/ remove datafields, the queries will might crash. SQL-Queries are more or less hardcoded based on the data provided by the API and my plant (SUN2000 8KTL-M1).
 - I do not garantuee any functionality, safety or security (Passwords might be easily gathered, so be wise in using accounts with least amount of access rights, secure the .conf-File against 
 unauthorized access, etc.). Primarily I created these scripts for my needs.
-- Last but not least: if you keen on contributing in the development, feel free to contact me.
+- Last but not least: if you're keen on contributing in the development, feel free to contact me.
 
 # Configuration
 ## Install Prerequisites
