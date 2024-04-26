@@ -76,6 +76,10 @@ The Script ```"./FSopenAPI_deviceRealKPI.sh"``` needs to get started with the fl
 70: safety box
 ```
 
+#### Example: 
+
+Run ```./FSopenAPI_deviceRealKPI.sh -d 1,39,47``` to gather data from your inverter, the battery and the power sensor.
+
 Further information to be found in the Huawei Documentation at https://support.huawei.com/enterprise/en/doc/EDOC1100261860/c2b572a8/device-list-interface
 
 ## Historical Data
