@@ -18,7 +18,9 @@
 ################################################################
 
 # read config
-. ./FSopenAPI.conf
+script_dir=$(dirname "$0")
+. "$script_dir/FSopenAPI.conf"
+
 
 tablehourly="${mysql_table_prefix}kpihourly"
 tabledaily="${mysql_table_prefix}kpidaily"

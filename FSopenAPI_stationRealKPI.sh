@@ -18,7 +18,8 @@
 ################################################################
 
 # read config
-. ./FSopenAPI.conf
+script_dir=$(dirname "$0")
+. "$script_dir/FSopenAPI.conf"
 
 # Initialize verbose flag
 verbose=false

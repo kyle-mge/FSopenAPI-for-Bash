@@ -17,10 +17,12 @@
 ################################################################
 
 # read config
-. ./FSopenAPI.conf
+script_dir=$(dirname "$0")
+. "$script_dir/FSopenAPI.conf"
 
 # Initialize flags
 writetodatabase=false
+collecttimeindividual=false
 verbose=false
 
 # Function to display help message
@@ -29,7 +31,7 @@ display_help() {
     echo "Usage: $(basename "$0") [options]"
     echo "Options:"
     echo "  -s        Inject into MySQL (optional)"
-    echo "            Add Login Credentials in conf"
+    echo "            Add Login Credentials in FSopenAPI.conf"
     echo "  -i <Int>  Interval (mandatory)"
     echo "            1 = hourly"
     echo "            2 = daily"
@@ -37,6 +39,9 @@ display_help() {
     echo "            4 = yearly"
     echo ""
     echo "            provide multiple values comma-separated (,)"
+    echo ""
+    echo "  -d        Enter Date of Data to retrieved (optional)"
+    echo "            Format to be used YYYY-MM-DD (even when requesting monthly or yearly data!)"
     echo ""
     echo "  -v        verbose output (optional)"
     echo "  -h        display this help page"
@@ -48,13 +53,16 @@ if [[ "$1" == "-h" ]]; then
 fi
 
 # Check parameters
-while getopts ":i:svh" opt; do
+while getopts ":i:d:svh" opt; do
   case $opt in
     h)
       display_help
       ;;
     i)
       interval=$OPTARG
+      ;;
+    d)
+      collecttimeindividual="$OPTARG"
       ;;
     s)
       writetodatabase=true
@@ -153,6 +161,17 @@ current_hour_timestamp=$(date -d "now" +%s)
 current_hour_timestamp=$(date -d @$current_hour_timestamp +"%Y-%m-%d %H:00:00")
 current_hour_timestamp_ms=$(date -d "$current_hour_timestamp" +%s%3N)
 
+log_verbose ""
+log_verbose "Set collectTime:"
+
+if [[ "$collecttimeindividual" == "false" ]]; then
+	collecttime=$current_hour_timestamp_ms
+	log_verbose "Use actual date: ${current_hour_timestamp}, in Milliseconds/ Epochtime: ${collecttime}"
+else
+	collecttimeindividual_ms=$(date -d "$collecttimeindividual" +%s%3N)
+	collecttime=$collecttimeindividual_ms
+	log_verbose "Use historical date: ${collecttimeindividual}, in Milliseconds/ Epochtime: ${collecttime}"
+fi
 
 # Split the comma-separated list of integers
 IFS=',' read -ra values_array <<< "$interval"
@@ -186,7 +205,7 @@ for value in "${values_array[@]}"; do
 	returnhist=$(curl -s -X POST  "${URL}" \
 	     -H "Content-Type: application/json" \
 	     -H "XSRF-Token: ${token}" \
-	     -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${current_hour_timestamp_ms}\"}")
+	     -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${collecttime}\"}")
 
 	log_verbose "${intervalstring} KPI Station output:"
 	echo "${returnhist}"
