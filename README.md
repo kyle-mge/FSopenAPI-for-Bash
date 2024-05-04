@@ -1,5 +1,5 @@
 # Prologue
-This Scriptset reads Data via the openAPI-Interface from Huawei FusionSolar.
+This Scriptset reads Data via the openAPI/ Northbound-Interface from Huawei FusionSolar. It only needs a linux bash, cURL and jq. No need to install Python or other languages.
 
 # Disclaimer
 - I did not nor do I plan to implement any functions to catch errors while requesting the data. If the API is not responding, credentials aren't working/ are blocked etc., the scripts will not catch any data or might crash.
@@ -13,6 +13,8 @@ unauthorized access, etc.). Primarily I created these scripts for my needs.
 The Scriptset needs cURL, jq and mysql (mysql is only needed if you want to directly store the data in a MySQL-Database). To install simply run
 
 ```sudo apt install curl jq mysql-client```.
+
+Please be aware that I won't explain how to set up the MySQL-Database-Server. There's plenty of instructions and how-to's in the internet. I assume that- if you want to store your data in MySQL, that you have a MySQL-Server already up and running.
 
 ## Edit the FSopenAPI.conf with your specific Data
 Update the Login-credentials and enter your Username and Systemcode (aka Password). You need to create a Northbound API-Account first through Fusionsolar. Ask your Installer, if you do not have Administrator-Rights for your plant.
@@ -73,6 +75,10 @@ The Script ```"./FSopenAPI_deviceRealKPI.sh"``` needs to get started with the fl
 63: distributed SmartLogger
 70: safety box
 ```
+
+#### Example: 
+
+Run ```./FSopenAPI_deviceRealKPI.sh -d 1,39,47``` to gather data from your inverter, the battery and the power sensor.
 
 Further information to be found in the Huawei Documentation at https://support.huawei.com/enterprise/en/doc/EDOC1100261860/c2b572a8/device-list-interface
 
