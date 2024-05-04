@@ -94,8 +94,13 @@ Use the flag ```-i``` and add one ore multiple Integer values as follows. Multip
 4: request yearly historical Data
 ```
 
-#### Example:
+Use ```-d``` followed by the Date in the format YYYY-MM-DD to pull data from the given date. If you pull monthly or yearly data, still use the full date (including the day), otherwise you wont't get any data as the date will be invalid for the script. 
+Hint: if you requesting yearly or monthly historical data, it doesn't matter whether you request from the beginning or end of the month/ year. The historical data will be the same.
+
+#### Examples:
 ```./FSopenAPI_stationhistorical.sh -s -i 2``` to gather the daily historical data and store in Database
+
+```./FSopenAPI_stationhistorical.sh -s -i 2 -d 2024-01-01``` to gather the daily historical data from January 1st of 2024 and store in Database
 
 ```./FSopenAPI_stationhistorical.sh -i 2,3``` to gather the daily and monthly historical data but do not store in Database and only output the data as json-Strings.
 
@@ -106,5 +111,4 @@ All Scripts output the results as delivered by openAPI in json-Format for furthe
 
 
 # Work in progress
-- optional flag for historical data to include "day of collecting data" to select data from past days/ months/ years
 - long term: historical data from Devices + store in Database
