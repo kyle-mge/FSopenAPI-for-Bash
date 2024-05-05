@@ -25,6 +25,11 @@ writetodatabase=false
 collecttimeindividual=false
 verbose=false
 
+start_date=$(date +%Y-%m-%d)  # Default to current date
+end_date=$start_date          # Default end date is same as start date
+mulitplicator=1               # Default value for multiplicator if -d and -e is given
+
+
 # Function to display help message
 display_help() {
     echo ""
@@ -43,6 +48,21 @@ display_help() {
     echo "  -d        Enter Date of Data to retrieved (optional)"
     echo "            Format to be used YYYY-MM-DD (even when requesting monthly or yearly data!)"
     echo ""
+    echo "  -e        Enter end date of date range (optional)"
+    echo "            If used, the -d Flag is mandatory."
+    echo "            The date from -d will be used as start date"
+    echo "            The date from -e will be used as end date"
+    echo "            ATTENTION: DO NOT USE TO BIG TIME RANGE AS YOU'LL MIGHT BLOCK YOUR ACCOUNT DUE TO MANY REQUESTS!"
+    echo ""
+    echo "  -m        Mulitplicator in days (optional) to extend the range between the -d Flag and -e Flag."
+    echo "            example: use -d 2024-01-01 -e 2024-05-01 -m 31 will request data for every month"
+    echo "            between January and May with 5 requests. Requesting daily data collects the whole month,"
+    echo "            a single request per day is not needed."
+    echo "            Only Integer values are valid."
+    echo ""
+    echo "            ATTENTION: giving the -e and/ or -m flag without -d might result in errors!"
+    echo "            Considering this, it means: never use -e without -d, never use -m without -e."
+    echo ""
     echo "  -v        verbose output (optional)"
     echo "  -h        display this help page"
     exit 0
@@ -53,7 +73,7 @@ if [[ "$1" == "-h" ]]; then
 fi
 
 # Check parameters
-while getopts ":i:d:svh" opt; do
+while getopts ":i:d:e:m:svh" opt; do
   case $opt in
     h)
       display_help
@@ -62,7 +82,15 @@ while getopts ":i:d:svh" opt; do
       interval=$OPTARG
       ;;
     d)
-      collecttimeindividual="$OPTARG"
+      start_date="$OPTARG"
+      end_date="$OPTARG"
+      ;;
+    e)
+      end_date="$OPTARG"
+      increment_by_day=true
+      ;;
+    m)
+      multiplicator="$OPTARG"
       ;;
     s)
       writetodatabase=true
@@ -108,76 +136,33 @@ timestamp_to_readable() {
     date -d "@$timestamp_sec" "+%Y-%m-%d %H:%M:%S"
 }
 
-log_verbose ""
-log_verbose "Fusionsolar openAPI-Tool"
-log_verbose "Matthias Grobe"
-log_verbose "version 1.0, April 2024"
-log_verbose ""
-log_verbose "Requesting Token from ${loginURL}..."
+# Function to convert date to epoch time in milliseconds
+date_to_epoch() {
+  local input_date="$1"
+  local epoch_time=$(date -d "$input_date" +%s%3N)
+  echo "$epoch_time"
+}
 
-# retrieve xsrf-token through cURL-Request
-returntoken=$(curl -s -D - -o /dev/null  "${loginURL}" \
-     -H "Content-Type: application/json" \
-     -d "{\"userName\": \"${userName}\",\"systemCode\": \"${systemCode}\"}") 
+# Convert start and end dates to epoch time
+start_epoch=$(date_to_epoch "$start_date")
+end_epoch=$(date_to_epoch "$end_date")
 
-# output cURL-Header-Response and extract XSRF-Token
-log_verbose "cURL output:"
-log_verbose "${returntoken}"
-log_verbose "_____________________________________________________________________"
-log_verbose "extract Token:"
-token=$(echo "${returntoken}" | grep "xsrf-token" | awk -F ':' '{print $2}')
-log_verbose "XSRF-Token: ${token}"
-log_verbose ""
-tokenlength=$(echo "${token}" | wc -c)
-log_verbose "Token-Length/ qty of Characters: ${tokenlength}"
+# Function to process data for a single date
+process_single_date() {
+  local date_to_process="$1"
+  local processed_date=$(date -d "@$((date_to_process / 1000))" +%Y-%m-%d)
+  # retrieve historical KPI, assuming only one Plant
+  # Get the current hour timestamp, reset minutes and seconds to zero and calculate in milliseconds
+  log_verbose ""
+  log_verbose "Set collectTime:"
+  log_verbose "Processing date: ${processed_date}"
+  log_verbose "Processing date in Milliseconds/ Epochtime: ${date_to_process}"
 
-if (( tokenlength < 80 )); then
-	echo "Tokenlength not valid"
-	echo "Check cURL-Output from Login"
-	echo "and Login-Credentials!"
-	echo "Stopping further Script-Execution!"
-	exit 1
-fi
+  # Split the comma-separated list of integers
+  IFS=',' read -ra values_array <<< "$interval"
 
-log_verbose "_____________________________________________________________________"
-log_verbose " get PlantCode..."
-log_verbose ""
-# retrieve plantCode, assuming only one Plant
-returnplant=$(curl -s -X POST  "${stationURL}" \
-     -H "Content-Type: application/json" \
-     -H "XSRF-Token: ${token}" \
-     -d "{\"pageNo\": \"1\"}")
-
-log_verbose "Station output:"
-log_verbose "${returnplant}"
-log_verbose ""
-plant_code=$(echo "${returnplant}" | jq -r '.data.list[0].plantCode')
-log_verbose "plantCode: ${plant_code}"
-log_verbose ""
-
-# retrieve historical KPI, assuming only one Plant
-# Get the current hour timestamp, reset minutes and seconds to zero and calculate in milliseconds
-current_hour_timestamp=$(date -d "now" +%s)
-current_hour_timestamp=$(date -d @$current_hour_timestamp +"%Y-%m-%d %H:00:00")
-current_hour_timestamp_ms=$(date -d "$current_hour_timestamp" +%s%3N)
-
-log_verbose ""
-log_verbose "Set collectTime:"
-
-if [[ "$collecttimeindividual" == "false" ]]; then
-	collecttime=$current_hour_timestamp_ms
-	log_verbose "Use actual date: ${current_hour_timestamp}, in Milliseconds/ Epochtime: ${collecttime}"
-else
-	collecttimeindividual_ms=$(date -d "$collecttimeindividual" +%s%3N)
-	collecttime=$collecttimeindividual_ms
-	log_verbose "Use historical date: ${collecttimeindividual}, in Milliseconds/ Epochtime: ${collecttime}"
-fi
-
-# Split the comma-separated list of integers
-IFS=',' read -ra values_array <<< "$interval"
-
-# loop through deviceTypeID's and get RealtimeKPI per Device
-for value in "${values_array[@]}"; do
+  # loop through the data types
+  for value in "${values_array[@]}"; do
 	case $value in
 	1)
 		URL="${hourlyURL}"
@@ -205,7 +190,7 @@ for value in "${values_array[@]}"; do
 	returnhist=$(curl -s -X POST  "${URL}" \
 	     -H "Content-Type: application/json" \
 	     -H "XSRF-Token: ${token}" \
-	     -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${collecttime}\"}")
+	     -d "{\"stationCodes\": \"${plant_code}\",\"collectTime\": \"${date_to_process}\"}")
 
 	log_verbose "${intervalstring} KPI Station output:"
 	echo "${returnhist}"
@@ -291,7 +276,78 @@ for value in "${values_array[@]}"; do
 		log_verbose "run MySQL-Client and execute INSERT-query"
 		mysql --silent -h "$mysql_host" -u "$mysql_user" -p"$mysql_password" "$mysql_database" -e "$query"
 	fi
-done
+  done
+}
+
+# Function to iterate through dates
+iterate_dates() {
+  local current_date="$start_epoch"  # Use global variable
+  local end="$end_epoch"              # Use global variable
+
+  while [[ $current_date -le $end ]]; do
+    process_single_date "$current_date"
+    log_verbose "Iterate through dates. Current date = ${current_date}"
+    current_date=$((current_date + (86400000*${multiplicator})))
+  done
+}
+
+log_verbose ""
+log_verbose "Fusionsolar openAPI-Tool"
+log_verbose "Matthias Grobe"
+log_verbose "version 1.0, April 2024"
+log_verbose ""
+log_verbose "Requesting Token from ${loginURL}..."
+
+# retrieve xsrf-token through cURL-Request
+returntoken=$(curl -s -D - -o /dev/null  "${loginURL}" \
+     -H "Content-Type: application/json" \
+     -d "{\"userName\": \"${userName}\",\"systemCode\": \"${systemCode}\"}") 
+
+# output cURL-Header-Response and extract XSRF-Token
+log_verbose "cURL output:"
+log_verbose "${returntoken}"
+log_verbose "_____________________________________________________________________"
+log_verbose "extract Token:"
+token=$(echo "${returntoken}" | grep "xsrf-token" | awk -F ':' '{print $2}')
+log_verbose "XSRF-Token: ${token}"
+log_verbose ""
+tokenlength=$(echo "${token}" | wc -c)
+log_verbose "Token-Length/ qty of Characters: ${tokenlength}"
+
+if (( tokenlength < 80 )); then
+	echo "Tokenlength not valid"
+	echo "Check cURL-Output from Login"
+	echo "and Login-Credentials!"
+	echo "Stopping further Script-Execution!"
+	exit 1
+fi
+
+log_verbose "_____________________________________________________________________"
+log_verbose " get PlantCode..."
+log_verbose ""
+# retrieve plantCode, assuming only one Plant
+returnplant=$(curl -s -X POST  "${stationURL}" \
+     -H "Content-Type: application/json" \
+     -H "XSRF-Token: ${token}" \
+     -d "{\"pageNo\": \"1\"}")
+
+log_verbose "Station output:"
+log_verbose "${returnplant}"
+log_verbose ""
+plant_code=$(echo "${returnplant}" | jq -r '.data.list[0].plantCode')
+log_verbose "plantCode: ${plant_code}"
+log_verbose ""
+
+# retrieve data and iterate through the date range if given by the -d and -e flag. If -e is not given
+# the date from -d will be used. If -e and -d is not given, the actual date will be used.
+
+# If end date is same as start date, process single date
+if [[ $start_epoch -eq $end_epoch ]]; then
+  process_single_date "$start_epoch"
+else
+  iterate_dates
+fi
+
 
 # close session
 closesession=$(curl -s -X POST  "${logoutURL}" \
