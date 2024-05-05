@@ -97,6 +97,9 @@ Use the flag ```-i``` and add one ore multiple Integer values as follows. Multip
 Use ```-d``` followed by the Date in the format YYYY-MM-DD to pull data from the given date. If you pull monthly or yearly data, still use the full date (including the day), otherwise you wont't get any data as the date will be invalid for the script. 
 Hint: if you requesting yearly or monthly historical data, it doesn't matter whether you request from the beginning or end of the month/ year. The historical data will be the same.
 
+Extend the ```-d``` flag with an ```-e``` flag and use ```-d``` as start date and ```-e``` Flag as end date. The standard range is one day and you'll pull a request for every single day between ```-d``` and ```-e```. ATTENTION: still use small ranges per request, as you'll might block yor API-Account. 
+Hint: as requesting the daily historical data, the API always answers with the data for the whole month. To reduce requests for historical data, use ```-d``` and ```-e``` with the flag ```-m``` as a multiplicator in days. Example: use ```-d 2024-01-01 -e 2024-05-01 -m 31``` to send 5 requests where the answers include the daily historical data from whole months for January in first request until May in fifth request.
+
 #### Examples:
 ```./FSopenAPI_stationhistorical.sh -s -i 2``` to gather the daily historical data and store in Database
 
